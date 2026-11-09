@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>周波数・周期・波形 計算ツール</title>
+<!-- タイトル：周波数・周期・波形 計算ツール -->
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;color:#1f2937;background:#f5f6f8;font-size:15px}
+*{box-sizing:border-box}body{margin:0}main{max-width:1040px;margin:auto;padding:26px 16px 65px}h1{font-size:1.65rem;margin:0 0 8px}h2{font-size:1.15rem;margin:0 0 16px}h3{font-size:1rem;margin:18px 0 10px}.hint{color:#64748b;font-size:.88rem;line-height:1.65}.section{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:22px;margin:18px 0}.inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.panel{border:1px solid #e2e8f0;border-radius:10px;padding:16px;min-width:0}.panel h3{margin:0 0 15px}.fields{display:grid;grid-template-columns:2fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}label{font-size:.85rem;font-weight:600;color:#475569}input,select{width:100%;min-width:0;padding:10px 9px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;color:#0f172a;font:inherit}input:focus,select:focus{outline:2px solid #93c5fd;outline-offset:1px}.readings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}.metric{padding:12px 10px;border-radius:8px;background:#f1f5f9;min-width:0}.metric small{display:block;color:#64748b;font-size:.76rem;margin-bottom:5px}.metric strong{font-size:1rem;overflow-wrap:anywhere}.comparison{margin-top:16px;padding:16px;background:#eff6ff;border-radius:9px;line-height:1.8}.comparison strong{color:#1d4ed8}.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:360px;text-align:right}th,td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-variant-numeric:tabular-nums}th:first-child,td:first-child{text-align:left}th{background:#f8fafc;font-size:.88rem}td{font-size:.89rem}canvas{display:block;width:100%;height:280px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;touch-action:manipulation}.controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0 15px}.controls label{display:flex;gap:6px;align-items:center}.controls input{width:auto}.scope-result{background:#f8fafc;padding:12px;border-radius:8px;line-height:1.9;margin:12px 0}.muted{font-size:.82rem;color:#64748b}.pill{display:inline-block;padding:3px 8px;border-radius:20px;background:#dbeafe;color:#1e40af;font-size:.78rem}button{border:1px solid #94a3b8;border-radius:7px;background:white;padding:8px 12px;cursor:pointer;font:inherit}button:hover{background:#f1f5f9}.voltage{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.error{color:#b91c1c;font-size:.88rem}.colored-clock{color:#2563eb}.colored-sine{color:#dc6a23}@media(max-width:680px){.inputs,.voltage{grid-template-columns:1fr}.section{padding:16px}.readings{gap:5px}.metric{padding:9px 7px}.metric strong{font-size:.88rem}canvas{height:235px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>周波数・周期・波形 計算ツール</h1>
+<p class="hint">最初に数値と計算結果、その次にグラフを表示します。クロック信号とサイン波の比較、SI接頭語換算、オシロスコープの時間差測定に対応します。</p>
+</header>
+<section class="section">
+<h2>1. 数値入力・計算結果</h2>
+<div class="inputs">
+<div class="panel">
+<h3 class="colored-clock">周波数1：クロック信号</h3>
+<div class="fields"><div class="field"><label for="v1">数値</label><input id="v1" type="number" min="0" step="any" value="1"></div><div class="field"><label for="u1">単位</label><select id="u1"></select></div></div>
+<div class="field"><label for="mode1">入力する値</label><select id="mode1"><option value="f">周波数</option><option value="t">周期</option></select></div>
+<div class="field"><label for="duty">デューティ比 (%)</label><input id="duty" type="number" min="1" max="99" step="1" value="50"></div>
+<div class="readings"><div class="metric"><small>周波数</small><strong id="f1out">-</strong></div><div class="metric"><small>周期</small><strong id="t1out">-</strong></div><div class="metric"><small>半周期</small><strong id="h1out">-</strong></div></div>
+</div>
+<div class="panel">
+<h3 class="colored-sine">周波数2：サイン波</h3>
+<div class="fields"><div class="field"><label for="v2">数値</label><input id="v2" type="number" min="0" step="any" value="500"></div><div class="field"><label for="u2">単位</label><select id="u2"></select></div></div>
+<div class="field"><label for="mode2">入力する値</label><select id="mode2"><option value="f">周波数</option><option value="t">周期</option></select></div>
+<div class="field"><label for="amp">表示振幅 (V)</label><input id="amp" type="number" min="0.001" step="any" value="1"></div>
+<div class="readings"><div class="metric"><small>周波数</small><strong id="f2out">-</strong></div><div class="metric"><small>周期</small><strong id="t2out">-</strong></div><div class="metric"><small>半周期</small><strong id="h2out">-</strong></div></div>
+</div>
+</div>
+<p class="error" id="inputError" aria-live="polite"></p>
+<div class="comparison" id="compare" aria-live="polite"></div>
+<h3>周波数のSI接頭語換算</h3><div class="table-wrap"><table><thead><tr><th>単位</th><th>信号1</th><th>信号2</th></tr></thead><tbody id="frequencyTable"></tbody></table></div>
+<h3>周期のSI接頭語換算</h3><div class="table-wrap"><table><thead><tr><th>単位</th><th>信号1</th><th>信号2</th></tr></thead><tbody id="periodTable"></tbody></table></div>
+<p class="hint">電子回路でよく使う単位を表示しています。周期入力に切り替えると入力単位も自動的に秒系へ変わります。デューティ比が50%以外の場合、クロックのHigh時間とLow時間は半周期とは異なります。</p>
+</section>
+<section class="section">
+<h2>2. 波形表示</h2>
+<div class="controls"><label><input type="checkbox" id="showClock" checked>クロック信号</label><label><input type="checkbox" id="showSine" checked>サイン波</label><label for="cycles">表示基準</label><select id="cycles" style="width:auto"><option value="slow">低周波の3周期</option><option value="fast">高周波の5周期</option></select><span id="windowLabel" class="pill"></span></div>
+<canvas id="wave" aria-label="クロックとサイン波の波形"></canvas>
+<p class="hint">両信号を共通の時間軸で描画します。周波数差が大きい場合、高周波側は密集または間引き表示となります。表示時間を切り替えると速い側の形状も確認できます。</p>
+</section>
+<section class="section">
+<h2>3. オシロスコープ：A点とB点から周波数を求める</h2>
+<p class="hint">表示波形上を2回クリックまたはタップすると、A点とB点が決まります。時刻は直接入力して微調整も可能です。AとBが隣接する同位相の点なら全周期、半周期ずれた点なら半周期を選択してください。</p>
+<div class="controls"><label for="scopeSignal">測定波形</label><select id="scopeSignal" style="width:auto"><option value="1">クロック信号</option><option value="2">サイン波</option></select><button id="resetPoints" type="button">A・Bをリセット</button></div>
+<canvas id="scope" aria-label="A点とB点を指定する測定用波形"></canvas>
+<div class="inputs" style="margin-top:16px"><div class="fields"><div class="field"><label for="pointA">A点の時刻</label><input id="pointA" type="number" step="any" value="0"></div><div class="field"><label for="pointB">B点の時刻</label><input id="pointB" type="number" step="any" value="1"></div></div><div class="fields"><div class="field"><label for="abUnit">時刻の単位</label><select id="abUnit"><option value="1">s</option><option value="0.001" selected>ms</option><option value="0.000001">µs</option><option value="1e-9">ns</option><option value="1e-12">ps</option></select></div><div class="field"><label for="segment">A-Bの間隔</label><select id="segment"><option value="1">全周期 (1周期)</option><option value="0.5">半周期 (1/2周期)</option></select></div></div></div>
+<div class="scope-result" id="scopeResult" aria-live="polite"></div>
+<p class="hint">計算式：Δt = |tB - tA|、周期 T = Δt / 周期数、周波数 f = 周期数 / Δt。A-Bが複数周期なら、その周期数に応じて別途補正が必要です。クリック位置は時間軸を指定するためのもので、周期を自動認識する機能ではありません。</p>
+</section>
+<section class="section">
+<h2>4. 電圧・電流のSI接頭語換算</h2>
+<div class="voltage"><div class="panel"><h3>電圧</h3><div class="fields"><div class="field"><label for="volt">数値</label><input id="volt" type="number" step="any" value="3.3"></div><div class="field"><label for="voltUnit">単位</label><select id="voltUnit"></select></div></div><div class="table-wrap"><table><thead><tr><th>単位</th><th>換算値</th></tr></thead><tbody id="voltTable"></tbody></table></div></div>
+<div class="panel"><h3>電流</h3><div class="fields"><div class="field"><label for="current">数値</label><input id="current" type="number" step="any" value="10"></div><div class="field"><label for="currentUnit">単位</label><select id="currentUnit"></select></div></div><div class="table-wrap"><table><thead><tr><th>単位</th><th>換算値</th></tr></thead><tbody id="currentTable"></tbody></table></div></div></div>
+<p class="hint">電圧はMV・kV・V・mV・µV・nV、電流はkA・A・mA・µA・nA・pA・fAに対応します。電子回路で使用する範囲を優先した単位です。</p>
+</section>
+</main>
+<script>
+'use strict';
+// タイトル：周波数・周期・波形 計算ツール
+const $=id=>document.getElementById(id);
+const frequencyUnits=[['Hz',1],['kHz',1e3],['MHz',1e6],['GHz',1e9],['THz',1e12]];
+const timeUnits=[['s',1],['ms',1e-3],['µs',1e-6],['ns',1e-9],['ps',1e-12],['fs',1e-15]];
+const voltageUnits=[['MV',1e6],['kV',1e3],['V',1],['mV',1e-3],['µV',1e-6],['nV',1e-9]];
+const currentUnits=[['kA',1e3],['A',1],['mA',1e-3],['µA',1e-6],['nA',1e-9],['pA',1e-12],['fA',1e-15]];
+let frequencies=[1,500],scopeWindow=0.006,clickStage=0;
+function options(id,units,selected){$(id).innerHTML=units.map(([name,v])=>`<option value="${v}" ${name===selected?'selected':''}>${name}</option>`).join('')}
+options('u1',frequencyUnits,'Hz');options('u2',frequencyUnits,'Hz');options('voltUnit',voltageUnits,'V');options('currentUnit',currentUnits,'mA');
+function fmt(x){if(!Number.isFinite(x))return '—';if(x===0)return '0';const a=Math.abs(x);return (a>=1e9||a<1e-5)?x.toExponential(5):Number(x.toPrecision(8)).toLocaleString('ja-JP',{maximumFractionDigits:12})}
+function eng(x,units){if(!Number.isFinite(x)||x<=0)return '—';let result=units[0];for(const u of units){const z=x/u[1];if(z>=1&&z<1000){result=u;break}}if(x<units[units.length-1][1])result=units[units.length-1];else if(x>=units[0][1]*1000)result=units[0];return fmt(x/result[1])+' '+result[0]}
+function readFreq(n){const v=Number($('v'+n).value),factor=Number($('u'+n).value);return (v>0&&Number.isFinite(v))?($('mode'+n).value==='f'?v*factor:1/(v*factor)):NaN}
+function makeTable(id,units,vals){$(id).innerHTML=units.map(([unit,factor])=>'<tr><td>'+unit+'</td>'+vals.map(x=>'<td>'+fmt(x/factor)+'</td>').join('')+'</tr>').join('')}
+function syncUnit(n){const selector=$('u'+n),current=Number(selector.value),next=$('mode'+n).value==='f'?frequencyUnits:timeUnits;const old=($('mode'+n).value==='f'?timeUnits:frequencyUnits).find(x=>x[1]===current);options('u'+n,next,$('mode'+n).value==='f'?'Hz':'ms');update()}
+function update(){
+frequencies=[readFreq(1),readFreq(2)];const [a,b]=frequencies;const ok=frequencies.every(x=>Number.isFinite(x)&&x>0);
+$('inputError').textContent=ok?'':'周波数または周期には、0より大きい有限の数値を入力してください。';
+for(let n=1;n<=2;n++){const f=frequencies[n-1],t=1/f;$('f'+n+'out').textContent=eng(f,frequencyUnits);$('t'+n+'out').textContent=eng(t,timeUnits);$('h'+n+'out').textContent=eng(t/2,timeUnits)}
+if(ok){const larger=a===b?'両信号は同じ周波数です。':(a>b?'クロック信号（周波数1）':'サイン波（周波数2）')+'の方が高周波です。';const ratio=Math.max(a,b)/Math.min(a,b);$('compare').innerHTML='<b>'+larger+'</b><div>周波数比（高い方 / 低い方）：<strong>'+fmt(ratio)+' 倍</strong></div><div>低い周波数の1周期に、高い周波数は <strong>'+fmt(ratio)+' 周期分</strong> 入ります。</div><div>周期比：低周波側の周期は高周波側の <strong>'+fmt(ratio)+' 倍</strong> です。</div><div>クロック High時間：<strong>'+eng((Number($('duty').value)/100)/a,timeUnits)+'</strong>、Low時間：<strong>'+eng((1-Number($('duty').value)/100)/a,timeUnits)+'</strong></div>'}
+else $('compare').textContent='有効な周波数・周期の値を入力してください。';
+makeTable('frequencyTable',frequencyUnits,frequencies);makeTable('periodTable',timeUnits,frequencies.map(f=>1/f));drawWave();drawScope();updateAB();
+}
+function rangeCanvas(canvas){const width=Math.max(320,canvas.getBoundingClientRect().width),height=Math.max(150,canvas.getBoundingClientRect().height);const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);return {c,w:width,h:height}}
+function drawFrame(c,w,h,span){c.clearRect(0,0,w,h);c.fillStyle='#fff';c.fillRect(0,0,w,h);const L=55,R=12,T=18,B=30;const pw=w-L-R,ph=h-T-B;c.strokeStyle='#e2e8f0';c.lineWidth=1;c.font='11px system-ui';c.fillStyle='#64748b';for(let i=0;i<=5;i++){let x=L+pw*i/5;c.beginPath();c.moveTo(x,T);c.lineTo(x,T+ph);c.stroke();c.fillText(fmt(span*i/5*1e3)+'ms',Math.min(x,w-50),h-10)}for(let j=0;j<=4;j++){let y=T+ph*j/4;c.beginPath();c.moveTo(L,y);c.lineTo(w-R,y);c.stroke()}return{L,T,pw,ph}}
+function renderSignal(c,f,kind,windowSpan,geom,color,duty,amp,offset=0,scale=1){if(!Number.isFinite(f)||f<=0)return;const {L,T,pw,ph}=geom;const baseline=T+ph*(.5+offset),height=ph*.34*scale;c.strokeStyle=color;c.lineWidth=1.7;c.beginPath();const samples=Math.max(400,Math.round(pw*2));for(let i=0;i<=samples;i++){let t=windowSpan*i/samples,y;if(kind==='sine')y=Math.sin(2*Math.PI*((f*t)%1))*amp;else y=((f*t)%1)<duty?1:-1;let yy=baseline-height*y;if(i===0)c.moveTo(L,yy);else c.lineTo(L+pw*i/samples,yy)}c.stroke()}
+function signal(f,t,kind,duty){const phase=(f*t)%1;return kind==='sine'?Math.sin(2*Math.PI*phase):(phase<duty?1:-1)}
+function getWindow(){const valid=frequencies.filter(f=>Number.isFinite(f)&&f>0);if(valid.length!==2)return .006;const base=$('cycles').value==='fast'?Math.max(...valid):Math.min(...valid);return ( $('cycles').value==='fast'?5:3)/base}
+function drawWave(){const cv=$('wave'),{c,w,h}=rangeCanvas(cv),[f1,f2]=frequencies;const windowSpan=getWindow(),g=drawFrame(c,w,h,windowSpan);const duty=Math.min(.99,Math.max(.01,Number($('duty').value)/100||.5));$('windowLabel').textContent='表示時間：'+eng(windowSpan,timeUnits);if($('showClock').checked)renderSignal(c,f1,'clock',windowSpan,g,'#2563eb',duty,1);if($('showSine').checked)renderSignal(c,f2,'sine',windowSpan,g,'#dc6a23',duty,1,0,Math.min(1,Math.max(0,Number($('amp').value))))}
+function drawScope(){const cv=$('scope'),{c,w,h}=rangeCanvas(cv);const f=frequencies[Number($('scopeSignal').value)-1];scopeWindow=Number.isFinite(f)&&f>0?3/f:.006;const g=drawFrame(c,w,h,scopeWindow),isClock=$('scopeSignal').value==='1',duty=Math.min(.99,Math.max(.01,Number($('duty').value)/100||.5));renderSignal(c,f,isClock?'clock':'sine',scopeWindow,g,isClock?'#2563eb':'#dc6a23',duty,1);const fac=Number($('abUnit').value);for(const [id,color] of [['pointA','#16a34a'],['pointB','#dc2626']]){const t=Number($(id).value)*fac,x=g.L+t/scopeWindow*g.pw;if(Number.isFinite(x)&&x>=g.L&&x<=g.L+g.pw){c.strokeStyle=color;c.lineWidth=1.5;c.beginPath();c.moveTo(x,g.T);c.lineTo(x,g.T+g.ph);c.stroke();c.fillStyle=color;c.font='bold 13px system-ui';c.fillText(id==='pointA'?'A':'B',Math.min(x+4,w-20),g.T+15)}}}
+function updateAB(){const fac=Number($('abUnit').value),a=Number($('pointA').value)*fac,b=Number($('pointB').value)*fac,dt=Math.abs(b-a),parts=Number($('segment').value),out=$('scopeResult');if(!$('pointA').value||!$('pointB').value||!Number.isFinite(dt)||dt===0){out.textContent='A点とB点には異なる時刻を入力してください。';return}const period=dt/parts;out.innerHTML='A-B間の時間差：<strong>'+eng(dt,timeUnits)+'</strong>　／　周期：<strong>'+eng(period,timeUnits)+'</strong><div>算出した周波数：<strong>'+eng(1/period,frequencyUnits)+'</strong>（'+fmt(1/period)+' Hz）</div>'}
+function convertElectrical(inputId,unitId,tableId,units){let v=Number($(inputId).value)*Number($(unitId).value);if($(inputId).value===''||!Number.isFinite(v)){ $(tableId).innerHTML='<tr><td colspan="2">有効な数値を入力してください</td></tr>';return}makeTable(tableId,units,[v])}
+const ids=['v1','v2','u1','u2','duty','amp','showClock','showSine','cycles','scopeSignal'];ids.forEach(id=>$(id).addEventListener('input',update));
+for(let n=1;n<=2;n++)$('mode'+n).addEventListener('change',()=>{const prev=$('mode'+n).value,oldValue=Number($('v'+n).value),currentF=frequencies[n-1];options('u'+n,prev==='f'?frequencyUnits:timeUnits,prev==='f'?'Hz':'ms');$('v'+n).value=Number.isFinite(currentF)&&currentF>0?(prev==='f'?Number(currentF.toPrecision(10)):Number((1000/currentF).toPrecision(10))):oldValue;update()});
+['pointA','pointB','abUnit','segment'].forEach(id=>$(id).addEventListener('input',()=>{drawScope();updateAB()}));
+$('resetPoints').addEventListener('click',()=>{$('pointA').value=0;$('pointB').value=Number((scopeWindow/3/Number($('abUnit').value)).toPrecision(8));clickStage=0;drawScope();updateAB()});
+$('scope').addEventListener('pointerdown',event=>{const cv=$('scope'),rect=cv.getBoundingClientRect(),x=event.clientX-rect.left,L=55,R=12;if(x<L||x>rect.width-R)return;const t=(x-L)/(rect.width-L-R)*scopeWindow/Number($('abUnit').value);$(clickStage===0?'pointA':'pointB').value=Number(t.toPrecision(10));clickStage=(clickStage+1)%2;drawScope();updateAB()});
+[['volt','voltUnit','voltTable',voltageUnits],['current','currentUnit','currentTable',currentUnits]].forEach(([val,unit,table,units])=>{const f=()=>convertElectrical(val,unit,table,units);$(val).addEventListener('input',f);$(unit).addEventListener('change',f);f()});
+window.addEventListener('resize',()=>{drawWave();drawScope()});
+update();
+</script>
+</body>
+</html>
